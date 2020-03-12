@@ -1,33 +1,43 @@
-from skimage.metrics import structural_similarity
-import argparse
-import imutils
-import cv2
+#!/usr/bin/env python2
 
-ap = argparse.ArgumentParser()
-ap.add_argument("-f", "--first", required=True, help="first image")
-ap.add_argument("-s", "--second", required=True, help="second image")
-args = vars(ap.parse_args())
+import hashlib
+from PIL import Image
 
-imageA = cv2.imread(args["first"])
-imageB = cv2.imread(args["second"])
-grayA = cv2.cvtColor(imageA, cv2.COLOR_BGR2GRAY)
-grayB = cv2.cvtColor(imageB, cv2.COLOR_BGR2GRAY)
+def dHash(image, hash_size = 8):
+    image = image.convert('L').resize(
+            (hash_size + 1, hash_size),
+            Image.ANTIALIAS,
+            )
 
-(score, diff) = structural_similarity(grayA, grayB, full=True)
-diff = (diff * 255).astype("uint8")
-print("SSIM: {}".format(score))
+    pixels = list(image.getdata())
 
-thresh = cv2.threshold(diff, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1]
-cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-cnts = imutils.grab_contours(cnts)
+    diff = []
+    for row in xrange(hash_size):
+        for col in xrange(hash_size):
+            pixel_left = image.getpixel((col, row))
+            pixel_right = image.getpixel((col + 1, row))
+            diff.append(pixel_left > pixel_right)
 
-for c in cnts:
-    (x, y, w, h) = cv2.boundingRect(c)
-    cv2.rectangle(imageA, (x, y), (x + w, y + h), (0, 0, 255), 2)
-    cv2.rectangle(imageB, (x, y), (x + w, y + h), (0, 0, 255), 2)
+    decimal_value = 0
+    hex_string = []
+    for index, value in enumerate(diff):
+        if value:
+            decimal_value += 2**(index % 8)
+        if (index % 8) == 7:
+            hex_string.append(hex(decimal_value)[2:].rjust(2, '0'))
+            decimal_value = 0
 
-cv2.imshow("Original", imageA)
-cv2.imshow("Modified", imageB)
-cv2.imshow("Diff", diff)
-cv2.imshow("Thresh", thresh)
-cv2.waitKey(0)
+    return ''.join(hex_string)
+
+def user_interface():
+    print('Please enter the path of two images')
+    img1 = raw_input()
+    img2 = raw_input()
+
+    first_image = Image.open(img1)
+    second_image = Image.open(img2)
+
+    print 'Are images duplicates: ', dHash(first_image) == dHash(second_image)
+
+if __name__ == '__main__':
+    user_interface()

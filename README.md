@@ -1,9 +1,8 @@
 # Different between two images
 
-## With openCV
+## Without openCV
 
 #### Requirements
-* opencv-python
-* imutils
-* scikit-image
-* Python3
+* hashlib
+* Pillow
+* Python2
