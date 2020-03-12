@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from skimage.metrics import structural_similarity
 import argparse
 import imutils
